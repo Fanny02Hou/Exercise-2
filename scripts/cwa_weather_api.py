@@ -50,11 +50,41 @@ class CWAWeatherAPI:
         
         for record in records:
             try:
+                coords = record.get('GeoInfo', {}).get('Coordinates', [])
+
+                coord0_lat = None
+                coord0_lon = None
+                coord1_lat = None
+                coord1_lon = None
+
+                try:
+                    if len(coords) > 0:
+                        coord0_lat = float(coords[0].get('StationLatitude')) if coords[0].get('StationLatitude') is not None else None
+                        coord0_lon = float(coords[0].get('StationLongitude')) if coords[0].get('StationLongitude') is not None else None
+                        coord0_crs = coords[0].get('CoordinateSystem', 'TWD67')  # 預設為 TWD67
+                    if len(coords) > 1:
+                        coord1_lat = float(coords[1].get('StationLatitude')) if coords[1].get('StationLatitude') is not None else None
+                        coord1_lon = float(coords[1].get('StationLongitude')) if coords[1].get('StationLongitude') is not None else None
+                        coord1_crs = coords[1].get('CoordinateSystem', 'WGS84')  # 預設為 WGS84
+                except (ValueError, TypeError):
+                    coord0_lat = None
+                    coord0_lon = None
+                    coord1_lat = None
+                    coord1_lon = None
+                    coord0_crs = 'TWD67'
+                    coord1_crs = 'WGS84'
+
                 station_info = {
                     'station_id': record['StationId'],
                     'station_name': record['StationName'],
-                    'latitude': float(record['GeoInfo']['Coordinates'][1]['StationLatitude']),  # 使用 WGS84 座標
-                    'longitude': float(record['GeoInfo']['Coordinates'][1]['StationLongitude']),
+                    'latitude': coord1_lat,
+                    'longitude': coord1_lon,
+                    'coord0_latitude': coord0_lat,
+                    'coord0_longitude': coord0_lon,
+                    'coord0_crs': coord0_crs,
+                    'coord1_latitude': coord1_lat,
+                    'coord1_longitude': coord1_lon,
+                    'coord1_crs': coord1_crs,
                     'temperature': float(record['WeatherElement']['AirTemperature']) if record['WeatherElement']['AirTemperature'] else None,
                     'humidity': float(record['WeatherElement']['RelativeHumidity']) if record['WeatherElement']['RelativeHumidity'] else None,
                     'observation_time': record['ObsTime']['DateTime'],
